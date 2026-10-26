@@ -16,7 +16,7 @@ struct CapsuleView: View {
                         Text("暂无已登录账号").font(.system(size: 12, weight: .medium))
                     }.foregroundStyle(.white.opacity(0.75)).frame(maxWidth: .infinity, maxHeight: .infinity)
                 }.buttonStyle(.plain)
-            } else if CapsuleLayout.naturalHeight(accountCount: model.displayedIDs.count) > Double(model.capsuleHeight) {
+            } else if CapsuleLayout.naturalHeight(accountCount: model.displayedIDs.count, width: Double(model.capsuleWidth)) > Double(model.capsuleHeight) {
                 ScrollViewReader { proxy in
                     ScrollView(.vertical) { rows }
                         .onChange(of: model.catalog.currentID) { _ in
@@ -72,12 +72,12 @@ struct CapsuleView: View {
                 if stale { Image(systemName: "exclamationmark.circle").font(.system(size: 10)).foregroundStyle(.orange) }
             }.frame(height: 14)
             VStack(spacing: 5) {
-                quotaBar("5h", model.snapshots[id]?.fiveHour, tint: .mint, stale: stale)
-                quotaBar("周", model.snapshots[id]?.weekly, tint: Color(red: 0.52, green: 0.68, blue: 1), stale: stale)
+                quotaBar("5 小时限额", model.snapshots[id]?.fiveHour, seconds: 18_000, stale: stale)
+                quotaBar("7 天限额", model.snapshots[id]?.weekly, seconds: 604_800, stale: stale)
             }
         }
         .padding(.horizontal, 10).padding(.vertical, 8)
-        .frame(height: 72)
+        .frame(height: CGFloat(CapsuleLayout.accountHeight(width: Double(model.capsuleWidth))))
         .background(current ? Color.mint.opacity(0.055) : Color.white.opacity(0.025),
                     in: RoundedRectangle(cornerRadius: 11))
         .overlay(RoundedRectangle(cornerRadius: 11).strokeBorder(current ? .mint.opacity(0.16) : .white.opacity(0.055), lineWidth: 0.5))
@@ -85,24 +85,32 @@ struct CapsuleView: View {
         .accessibilityElement(children: .combine)
     }
 
-    private func quotaBar(_ title: String, _ window: QuotaWindow?, tint: Color, stale: Bool) -> some View {
+    private func quotaBar(_ title: String, _ window: QuotaWindow?, seconds: Int, stale: Bool) -> some View {
         let remaining = window?.remainingPercent
-        let color: Color = stale ? .gray : (remaining.map { $0 < 10 ? .red : ($0 < 20 ? .orange : tint) } ?? .gray)
-        return HStack(spacing: 8) {
-            Text(title).font(.system(size: 10, weight: .medium)).foregroundStyle(.white.opacity(0.55))
-                .frame(width: 17, alignment: .leading)
-            GeometryReader { geometry in
-                ZStack(alignment: .leading) {
-                    Capsule().fill(.white.opacity(0.09))
-                    Capsule().fill(color).frame(width: geometry.size.width * CGFloat(remaining ?? 0) / 100)
+        let reset = QuotaResetText.label(date: window?.resetsAt, windowSeconds: seconds)
+        let wide = model.capsuleWidth >= 500
+        return VStack(alignment: .leading, spacing: 3) {
+            HStack(spacing: 8) {
+                Text(title + "：").font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.55))
+                    .frame(width: 67, alignment: .leading)
+                QuotaPatternBar(remaining: remaining, stale: stale)
+                Text(remaining.map { "剩余 \($0)%" } ?? "剩余 —")
+                    .font(.system(size: 11, weight: .medium, design: .monospaced))
+                    .foregroundStyle(stale ? .gray : .white.opacity(0.92))
+                    .frame(width: 69, alignment: .trailing)
+                if wide {
+                    Text("（" + reset + "）").font(.system(size: 10))
+                        .foregroundStyle(.white.opacity(0.5)).fixedSize()
                 }
-            }.frame(height: 4)
-            Text(remaining.map { "\($0)%" } ?? "—")
-                .font(.system(size: 11, weight: .semibold, design: .rounded)).monospacedDigit()
-                .foregroundStyle(stale ? .gray : .white.opacity(0.92))
-                .frame(width: 34, alignment: .trailing)
+            }.frame(height: 16)
+            if !wide {
+                Text(reset).font(.system(size: 10)).foregroundStyle(.white.opacity(0.5))
+                    .lineLimit(1).minimumScaleFactor(0.85)
+                    .padding(.leading, 75).frame(height: 12)
+            }
         }
-        .frame(height: 12)
-        .accessibilityLabel("\(title == "5h" ? "5 小时" : "周额度")，\(remaining.map { "剩余 \($0)%" } ?? "暂不可用")")
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(title)，\(remaining.map { "剩余 \($0)%" } ?? "暂不可用")，\(reset)")
     }
 }

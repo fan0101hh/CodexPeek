@@ -17,13 +17,16 @@ public enum CapsuleLayout {
     public static let maximumWidth: Double = 720
     public static let minimumHeight: Double = 100
 
-    public static func naturalHeight(accountCount: Int) -> Double {
+    public static func accountHeight(width: Double) -> Double { width >= 500 ? 76 : 108 }
+
+    public static func naturalHeight(accountCount: Int, width: Double = CapsuleLayout.width) -> Double {
         guard accountCount > 0 else { return minimumHeight }
-        return 28 + Double(accountCount) * 72 + Double(accountCount - 1) * 8
+        return 28 + Double(accountCount) * accountHeight(width: width) + Double(accountCount - 1) * 8
     }
 
-    public static func height(accountCount: Int, availableHeight: Double, preferredHeight: Double? = nil) -> Double {
-        let desired = preferredHeight.flatMap { $0.isFinite ? $0 : nil } ?? naturalHeight(accountCount: accountCount)
+    public static func height(accountCount: Int, availableHeight: Double, preferredHeight: Double? = nil,
+                              width: Double = CapsuleLayout.width) -> Double {
+        let desired = preferredHeight.flatMap { $0.isFinite ? $0 : nil } ?? naturalHeight(accountCount: accountCount, width: width)
         return min(max(minimumHeight, desired), max(minimumHeight, availableHeight))
     }
 

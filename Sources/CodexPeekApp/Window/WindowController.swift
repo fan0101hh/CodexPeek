@@ -92,7 +92,8 @@ final class PeekWindowController: NSObject, NSWindowDelegate, NSPopoverDelegate 
     func windowWillResize(_ sender: NSWindow, to frameSize: NSSize) -> NSSize {
         NSSize(width: CapsuleLayout.resolvedWidth(frameSize.width, availableWidth: model.availableWidth),
                height: CapsuleLayout.height(accountCount: model.displayedIDs.count,
-                                            availableHeight: model.availableHeight, preferredHeight: frameSize.height))
+                                            availableHeight: model.availableHeight, preferredHeight: frameSize.height,
+                                            width: frameSize.width))
     }
 
     func windowDidResize(_ notification: Notification) {
@@ -124,7 +125,7 @@ final class PeekWindowController: NSObject, NSWindowDelegate, NSPopoverDelegate 
         if model.availableWidth != availableWidth { model.availableWidth = availableWidth }
         panel.maxSize = NSSize(width: min(CapsuleLayout.maximumWidth, availableWidth), height: availableHeight)
         let height = CGFloat(CapsuleLayout.height(accountCount: accountCount, availableHeight: availableHeight,
-                                                 preferredHeight: model.settings.windowHeight))
+                                                 preferredHeight: model.settings.windowHeight, width: Double(model.capsuleWidth)))
         let width = model.capsuleWidth
         if panel.frame.height != height || panel.frame.width != width {
             var frame = panel.frame

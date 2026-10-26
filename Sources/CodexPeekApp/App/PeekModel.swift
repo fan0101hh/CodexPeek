@@ -27,7 +27,7 @@ final class PeekModel: ObservableObject {
 
     var capsuleHeight: CGFloat {
         CGFloat(CapsuleLayout.height(accountCount: displayedIDs.count, availableHeight: availableHeight,
-                                    preferredHeight: settings.windowHeight))
+                                    preferredHeight: settings.windowHeight, width: Double(capsuleWidth)))
     }
     var capsuleWidth: CGFloat { CGFloat(CapsuleLayout.resolvedWidth(settings.windowWidth, availableWidth: availableWidth)) }
     var store: AccountFileStore {

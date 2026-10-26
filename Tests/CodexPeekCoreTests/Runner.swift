@@ -8,6 +8,7 @@ struct Runner {
         let refresh = RefreshPolicyTests()
         let settings = SettingsTests()
         let presentation = PresentationTests()
+        let resetText = QuotaResetTextTests()
         let checks: [(String, CheckSuite, () async throws -> Void)] = [
             ("账号去重及只读", accounts, accounts.testDeduplicatesAndUsesNewestCredentialWithoutWritingSources),
             ("同工作区不同登录者", accounts, accounts.testDifferentSubjectsInSameWorkspaceAreSeparateAccounts),
@@ -33,7 +34,9 @@ struct Runner {
             ("区分授权失效与网络异常", presentation, presentation.testAuthFailuresHideButNetworkAndRateLimitsRemainVisible),
             ("到期自动隐藏", presentation, presentation.testExpiryAtBoundaryAutomaticallyRemovesAccount),
             ("旧设置迁移保留别名", settings, settings.testLegacyPreferencesKeepAliasesAndReceiveTransparentDefault),
-            ("窗口尺寸与别名持久化", settings, settings.testManualWindowSizePersistsWithoutLosingAliases)
+            ("窗口尺寸与别名持久化", settings, settings.testManualWindowSizePersistsWithoutLosingAliases),
+            ("重置时间与本地日期", resetText, resetText.testReferenceResetLabelsUseLocalTimeAndDate),
+            ("缺失过期及跨年重置", resetText, resetText.testMissingPastAndCrossYearResetAreUnambiguous)
         ]
         for (name, suite, check) in checks {
             let before = CheckReport.failures.count
