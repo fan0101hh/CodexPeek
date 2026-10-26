@@ -47,4 +47,8 @@ codesign --verify --strict dist/CodexPeek.app
 
 构建脚本调用 `scripts/generate-icon.swift` 生成 16…1024 像素图标集，再用系统 iconutil 创建 AppIcon.icns。Info.plist 的 CFBundleIconFile 指向该文件，签名前复制到 Contents/Resources。菜单栏使用代码绘制的 template 图标，自动适配系统深浅背景，不依赖特定版本的 SF Symbol。应用保持 LSUIElement 模式，不显示 Dock 图标。
 
+## DMG 安装包
+
+`bash scripts/build-dmg.sh` 先构建完整应用，再将其与指向 `/Applications` 的符号链接、安装说明一起打包为只读压缩 HFS+ 镜像。暂存目录使用 `.build` 下的唯一临时路径，退出时只清理这个目录。镜像创建后执行 `hdiutil verify`。CI 上传 DMG 和 ZIP，安装动作由用户另行完成，不在构建脚本中写入系统 Applications。
+
 额度轨道验收：在宽窗口中对比时分、月日、跨日等不同长度的重置文字，两条轨道及不同账号之间应左右对齐；0%、100% 与中间百分比只改变实心长度，不改变轨道宽度。

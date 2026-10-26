@@ -15,6 +15,12 @@
 - 专用应用图标与双进度条菜单栏图标；默认以菜单栏模式运行，不占用 Dock。
 - 不依赖 Codex CLI、Electron、WebView 或常驻查询子进程，无第三方库。
 
+## 安装
+
+打开构建生成的 `CodexPeek.dmg`，将完整的 `CodexPeek.app` 拖到旁边的 `Applications` 文件夹。退出旧版后，从 Finder 的“应用程序”打开新版；不要只复制包内的可执行文件。替换应用不会清除账号别名与窗口设置。
+
+应用默认在菜单栏运行，不在 Dock 常驻。Finder 中的应用应显示专用的绿蓝双进度条图标，可以通过“显示简介”核对应用版本，避免误用旧副本。图标位于应用包的 `Contents/Resources/AppIcon.icns`，构建时会校验签名。
+
 ## 构建与运行
 
 需要 macOS 13+、支持 Swift 6.0+ 的 Xcode / Command Line Tools。开发工具链需支持 macOS 13 目标，实际本机验证版本见 [开发说明](docs/development.md)。
@@ -26,6 +32,14 @@ open dist/CodexPeek.app
 ```
 
 也可以双击 `dist/CodexPeek.app`。本地构建只做 ad-hoc 签名，没有 Developer ID 签名和公证；下载到其他 Mac 后可能受到 Gatekeeper 限制。
+
+生成带 Applications 拖拽入口的 DMG 安装包：
+
+```bash
+bash scripts/build-dmg.sh
+```
+
+结果为 `dist/CodexPeek.dmg`，脚本会校验镜像完整性；构建脚本不会自动安装或启动应用。
 
 默认分别编译 Apple Silicon 与 Intel 后合并为通用二进制；也可以只构建指定架构：
 

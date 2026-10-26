@@ -4,6 +4,8 @@ A compact native macOS floating window for viewing remaining Codex subscription 
 
 Requires macOS 13+ and a Swift 6.0+ toolchain.
 
+To install, open `CodexPeek.dmg` and drag the complete app into the Applications shortcut. Quit the older version and launch the installed app from Finder. Preferences remain outside the app bundle. Build the DMG with `bash scripts/build-dmg.sh`; this does not automatically install or launch the app.
+
 ```bash
 swift run CodexPeekChecks
 bash scripts/build-app.sh
