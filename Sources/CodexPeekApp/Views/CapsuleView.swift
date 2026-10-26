@@ -10,7 +10,7 @@ struct CapsuleView: View {
         Group {
             if model.displayedIDs.isEmpty {
                 Button(action: showDetails) {
-                    Label("配置账号来源", systemImage: "plus.circle")
+                    Label("暂无已登录账号", systemImage: "person.crop.circle.badge.plus")
                         .font(.system(size: 12, weight: .medium))
                         .frame(maxWidth: .infinity, minHeight: 40)
                 }.buttonStyle(.plain)
@@ -33,6 +33,11 @@ struct CapsuleView: View {
         .background(Color.black.opacity(model.settings.effectiveBackgroundOpacity),
                     in: RoundedRectangle(cornerRadius: 19, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 19).strokeBorder(.white.opacity(hovering ? 0.24 : 0.12), lineWidth: 0.5))
+        .overlay(alignment: .top) {
+            WindowDragHandle().frame(height: 10).padding(.horizontal, 18)
+                .help("按住顶部短线拖动窗口")
+                .accessibilityLabel("拖动悬浮窗")
+        }
         .onHover { hovering = $0 }
         .preferredColorScheme(.dark)
         .accessibilityLabel("CodexPeek，显示剩余额度")

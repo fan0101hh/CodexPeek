@@ -3,7 +3,7 @@
 ```text
 明确配置的授权文件（只读）
   → AccountFileStore → AccountCatalog + Credential（内存）
-  → AccountPresentation 去重排序，当前账号第一，展示全部账号
+  → AccountPresentation 过滤未登录或授权失效账号、去重排序，当前账号第一
   → RefreshPolicy 分账号调度
   → UsageProviding / UsageClient
   → QuotaSnapshot → PeekModel → SwiftUI / NSPanel
@@ -33,4 +33,8 @@
 
 ## 动态窗口
 
-CapsuleLayout 统一计算视图和 NSPanel 的高度：单账号 44 pt，双账号 64 pt，后续每行增加 23 pt。窗口 resize 保持顶部位置并约束在屏幕可见区域；超过屏幕高度时用滚动展示完整列表。订阅 catalog 的去重后账号数量，数量不变时无需调整窗口。
+CapsuleLayout 统一计算视图和 NSPanel 的高度：单账号 44 pt，双账号 64 pt，后续每行增加 23 pt。窗口 resize 保持顶部位置并约束在屏幕可见区域；超过屏幕高度时用滚动展示完整列表。订阅 displayedIDs 的账号数量（包括到期及授权失效导致的隐藏），数量不变时无需调整窗口。
+
+## 登录展示状态
+
+非空且未过期的访问令牌允许初始展示；服务确认 unauthorized 或 expired 后隐藏。网络失败和限流不隐藏账号。主线程时钟每秒重新计算可展示列表，处理运行中到期；隐藏时同步收缩窗口。来源中的凭据 revision 更新后清除旧错误，重新判定展示，不写回认证文件。顶部独立 NSView 拖动区直接调用系统 performDrag，接收未激活窗口的首次鼠标事件，避免账号按钮拦截拖动。

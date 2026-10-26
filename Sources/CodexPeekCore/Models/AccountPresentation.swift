@@ -1,8 +1,11 @@
 import Foundation
 
 public enum AccountPresentation {
-    public static func orderedIDs(in catalog: AccountCatalog) -> [String] {
-        let ids = Set(catalog.credentials.map(\.account.id)).sorted()
+    public static func orderedIDs(in catalog: AccountCatalog, errors: [String: QuotaError] = [:], now: Date = Date()) -> [String] {
+        let ids = Set(catalog.credentials.filter {
+            !$0.accessToken.isEmpty && !$0.isExpired(at: now)
+                && errors[$0.account.id] != .unauthorized && errors[$0.account.id] != .expired
+        }.map(\.account.id)).sorted()
         guard let current = catalog.currentID, ids.contains(current) else { return ids }
         return [current] + ids.filter { $0 != current }
     }

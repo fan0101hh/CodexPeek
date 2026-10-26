@@ -28,6 +28,9 @@ struct Runner {
             ("切换删除与去重", presentation, presentation.testSwitchAndRemovalReorderWithoutGhostOrDuplicateAccounts),
             ("空列表与当前未知", presentation, presentation.testEmptySingleAndUnidentifiedCurrent),
             ("动态高度与屏幕上限", presentation, presentation.testHeightTracksRowsAndIsCappedByScreen),
+            ("隐藏未登录与过期账号", presentation, presentation.testLoggedOutAndExpiredRecordsAreNotDisplayed),
+            ("区分授权失效与网络异常", presentation, presentation.testAuthFailuresHideButNetworkAndRateLimitsRemainVisible),
+            ("到期自动隐藏", presentation, presentation.testExpiryAtBoundaryAutomaticallyRemovesAccount),
             ("旧设置迁移保留别名", settings, settings.testLegacyPreferencesKeepAliasesAndReceiveTransparentDefault)
         ]
         for (name, suite, check) in checks {

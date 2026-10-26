@@ -11,6 +11,7 @@ final class PeekModel: ObservableObject {
     @Published private(set) var sourceNotice: String?
     @Published private(set) var refreshing: Set<String> = []
     @Published var detailsVisible = false
+    @Published private(set) var displayedIDs: [String] = []
     @Published var availableHeight: Double = max(64, Double(NSScreen.main?.visibleFrame.height ?? 640) - 16)
 
     let demo: Bool
@@ -23,7 +24,6 @@ final class PeekModel: ObservableObject {
     private var sleeping = false
     private var observers: [NSObjectProtocol] = []
 
-    var displayedIDs: [String] { settings.displayedIDs(in: catalog) }
     var capsuleHeight: CGFloat {
         CGFloat(CapsuleLayout.height(accountCount: displayedIDs.count, availableHeight: availableHeight))
     }
@@ -129,7 +129,13 @@ final class PeekModel: ObservableObject {
             refreshing.remove(id)
         }
         catalog = next
+        updateDisplayedAccounts()
         sourceNotice = next.notices.isEmpty ? nil : Array(Set(next.notices)).sorted().joined(separator: "\n")
+    }
+
+    private func updateDisplayedAccounts() {
+        let ids = AccountPresentation.orderedIDs(in: catalog, errors: errors)
+        if ids != displayedIDs { displayedIDs = ids }
     }
 
     private func tick(force: Bool = false) {
@@ -144,6 +150,7 @@ final class PeekModel: ObservableObject {
             sourceRetry = false
             reload()
         }
+        updateDisplayedAccounts()
         let visible = Set(displayedIDs)
         for id in Array(requests.keys) where !visible.contains(id) {
             requests.removeValue(forKey: id)?.cancel()
@@ -186,6 +193,7 @@ final class PeekModel: ObservableObject {
                 self.refreshing.remove(id)
                 self.errors[id] = failure
                 if let snapshot { self.snapshots[id] = snapshot }
+                self.updateDisplayedAccounts()
             }
         }
     }
@@ -202,5 +210,6 @@ final class PeekModel: ObservableObject {
                 fiveHour: QuotaWindow(usedPercent: index == 0 ? 28 : 9, durationSeconds: 18_000, resetsAt: Date().addingTimeInterval(8280)),
                 weekly: QuotaWindow(usedPercent: index == 0 ? 62 : 84, durationSeconds: 604_800, resetsAt: Date().addingTimeInterval(180_000)), plan: account.plan)
         }
+        updateDisplayedAccounts()
     }
 }

@@ -25,8 +25,12 @@ struct DetailView: View {
                 }
                 ForEach(model.displayedIDs, id: \.self) { id in accountDetail(id) }
                 Divider()
-                Text("已发现 \(model.displayedIDs.count) 个账号，当前使用的账号始终排在最前。")
+                Text("已登录 \(model.displayedIDs.count) 个账号，当前使用的账号始终排在最前。")
                     .font(.caption).foregroundStyle(.secondary)
+                if model.displayedIDs.isEmpty {
+                    Text("请在原工具登录账号，授权文件更新后会自动显示。")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
                 if model.catalog.currentID == nil {
                     Text("尚未识别到当前订阅账号，请检查 Codex 认证路径。")
                         .font(.caption).foregroundStyle(.orange)
@@ -82,7 +86,8 @@ struct DetailView: View {
                 TextField("账号别名", text: Binding(get: { model.label(id) }, set: { value in
                     model.settings.aliases[id] = String(value.prefix(24))
                     if !model.demo { model.settings.save() }
-                })).textFieldStyle(.plain).font(.headline)
+                })).textFieldStyle(.roundedBorder).font(.headline)
+                    .help("编辑账号显示名称，自动保存")
                 if model.catalog.currentID == id { Text("当前").font(.caption2).foregroundStyle(.mint) }
                 if let plan = model.snapshots[id]?.plan ?? model.account(id)?.plan {
                     Text(plan.uppercased()).font(.caption2).foregroundStyle(.secondary)

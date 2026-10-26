@@ -1,6 +1,6 @@
 # CodexPeek
 
-A compact native macOS floating window for viewing remaining Codex subscription quotas for all discovered accounts, with the current account first. Built with SwiftUI, AppKit and Foundation; no third-party dependencies or background Codex processes.
+A compact native macOS floating window for viewing remaining Codex subscription quotas for all accounts with usable sign-in credentials, with the current account first. Built with SwiftUI, AppKit and Foundation; no third-party dependencies or background Codex processes.
 
 Requires macOS 13+ and a Swift 6.0+ toolchain.
 
@@ -12,9 +12,9 @@ open dist/CodexPeek.app
 
 Use `swift run CodexPeek --demo` for synthetic data or `swift run CodexPeek --diagnose` for an opt-in, redacted live check.
 
-The app reads `~/.cc-switch/codex-login-stash.json` for saved subscriptions and `~/.codex/auth.json` for the current account. Both paths are configurable. It never changes source credentials or refreshes shared refresh tokens. Expired accounts require sign-in through the original tool. Keychain-only authentication is not supported in v1.
+The app reads `~/.cc-switch/codex-login-stash.json` for saved subscriptions and `~/.codex/auth.json` for the current account. Both paths are configurable. It never changes source credentials or refreshes shared refresh tokens. Expired or confirmed unauthorized accounts are hidden until credentials are updated through the original tool. Network failures and rate limits do not hide accounts. Keychain-only authentication is not supported in v1.
 
-The 212 pt wide capsule grows with the account count and scrolls when it reaches screen height. It shows remaining five-hour and weekly percentages. Its background is 85% transparent by default and can be made fully transparent in settings. Click for aliases, reset times and settings. Default polling is five seconds, with failure backoff and sleep suspension. Source metadata is checked once per second. Server-side usage may update less frequently.
+The 212 pt wide capsule grows with the account count and scrolls when it reaches screen height. It shows remaining five-hour and weekly percentages. Its background is 85% transparent by default and can be made fully transparent in settings. Drag the small bar at the top to move the window. Click a row for editable aliases, reset times and settings. Default polling is five seconds, with failure backoff and sleep suspension. Source metadata is checked once per second. Server-side usage may update less frequently.
 
 Queries use an internal Codex HTTPS usage endpoint, isolated behind a replaceable provider. Compatibility is not guaranteed. Requests use an ephemeral URLSession, reject redirects and never write credentials or response bodies to logs or disk. All displayed accounts are queried with at most three concurrent requests, ordered by due time. Large account lists can take longer than the configured refresh interval.
 

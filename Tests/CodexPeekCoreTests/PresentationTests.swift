@@ -38,4 +38,31 @@ final class PresentationTests: CheckSuite {
         expectEqual(CapsuleLayout.height(accountCount: 100, availableHeight: 700), 700)
         expectEqual(CapsuleLayout.height(accountCount: 1, availableHeight: 700), 44)
     }
+
+    func testLoggedOutAndExpiredRecordsAreNotDisplayed() {
+        let account = Account(id: "expired-current", accountID: "expired-current", label: "expired")
+        let expired = Credential(account: account, accessToken: "synthetic", expiresAt: .distantPast)
+        let empty = Credential(account: Account(id: "logged-out", accountID: "logged-out", label: "out"), accessToken: "", expiresAt: nil)
+        var result = catalog(["valid"])
+        result.credentials += [expired, empty]
+        result.currentID = account.id
+        expectEqual(AccountPresentation.orderedIDs(in: result), ["valid"])
+    }
+
+    func testAuthFailuresHideButNetworkAndRateLimitsRemainVisible() {
+        let result = catalog(["a", "b", "c", "d"], current: "a")
+        expectEqual(AccountPresentation.orderedIDs(in: result, errors: ["a": .unauthorized, "b": .expired,
+                                                                          "c": .network, "d": .rateLimited(60)]), ["c", "d"])
+        // New credentials clear the old error in the model; the account can then reappear first.
+        expectEqual(AccountPresentation.orderedIDs(in: result, errors: ["c": .network]), ["a", "b", "c", "d"])
+    }
+
+    func testExpiryAtBoundaryAutomaticallyRemovesAccount() {
+        let now = Date(timeIntervalSince1970: 1000)
+        let credential = Credential(account: Account(id: "a", accountID: "a", label: "a"), accessToken: "synthetic",
+                                    expiresAt: now.addingTimeInterval(1))
+        let result = AccountCatalog(credentials: [credential], currentID: "a")
+        expectEqual(AccountPresentation.orderedIDs(in: result, now: now), ["a"])
+        expectEqual(AccountPresentation.orderedIDs(in: result, now: now.addingTimeInterval(1)), [])
+    }
 }

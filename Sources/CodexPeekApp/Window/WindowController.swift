@@ -52,8 +52,8 @@ final class PeekWindowController: NSObject, NSWindowDelegate, NSPopoverDelegate 
         status.menu = menu
         applySettings()
         restorePosition()
-        catalogObserver = model.$catalog
-            .map { AccountPresentation.orderedIDs(in: $0).count }
+        catalogObserver = model.$displayedIDs
+            .map(\.count)
             .removeDuplicates()
             .sink { [weak self] count in self?.resize(accountCount: count) }
         panel.orderFrontRegardless()
