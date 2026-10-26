@@ -4,17 +4,16 @@ import Foundation
 enum Diagnostics {
     /// Opt-in real reads; no account identifiers or response bodies are printed.
     static func run() async -> Int32 {
-        var settings = PeekSettings.read()
+        let settings = PeekSettings.read()
         let store = AccountFileStore(
             stashURL: URL(fileURLWithPath: (settings.stashPath as NSString).expandingTildeInPath),
             authURL: URL(fileURLWithPath: (settings.authPath as NSString).expandingTildeInPath))
         let catalog = store.load()
-        settings.chooseInitialAccounts(in: catalog)
         print("CodexPeek 只读诊断：发现 \(catalog.credentials.count) 个订阅账号；当前账号\(catalog.currentID == nil ? "未识别" : "已识别")")
         for notice in catalog.notices { print("来源提示：\(notice)") }
         let client = UsageClient()
         var success = 0
-        for (index, id) in settings.selectedIDs(in: catalog).enumerated() {
+        for (index, id) in settings.displayedIDs(in: catalog).enumerated() {
             guard let credential = catalog.credentials.first(where: { $0.account.id == id }) else {
                 print("展示位置 \(index + 1)：账号不可用")
                 continue

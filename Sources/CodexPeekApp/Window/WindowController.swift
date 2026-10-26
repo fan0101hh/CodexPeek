@@ -1,10 +1,15 @@
 import AppKit
 import CodexPeekCore
 import SwiftUI
+import Combine
 
 private final class FloatingPanel: NSPanel {
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { false }
+}
+
+private final class TransparentHostingView<Content: View>: NSHostingView<Content> {
+    override var isOpaque: Bool { false }
 }
 
 @MainActor
@@ -13,21 +18,25 @@ final class PeekWindowController: NSObject, NSWindowDelegate, NSPopoverDelegate 
     let panel: NSPanel
     private let popover = NSPopover()
     private var status: NSStatusItem!
+    private var catalogObserver: AnyCancellable?
 
     init(model: PeekModel) {
         self.model = model
-        panel = FloatingPanel(contentRect: NSRect(x: 0, y: 0, width: 212, height: 64),
+        panel = FloatingPanel(contentRect: NSRect(x: 0, y: 0, width: CGFloat(CapsuleLayout.width), height: model.capsuleHeight),
                         styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
         super.init()
         panel.title = "CodexPeek"
         panel.isOpaque = false
         panel.backgroundColor = .clear
-        panel.hasShadow = true
+        panel.hasShadow = false
         panel.hidesOnDeactivate = false
         panel.isMovableByWindowBackground = true
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         panel.delegate = self
-        panel.contentView = NSHostingView(rootView: CapsuleView(model: model) { [weak self] in self?.showDetails() })
+        let content = TransparentHostingView(rootView: CapsuleView(model: model) { [weak self] in self?.showDetails() })
+        content.wantsLayer = true
+        content.layer?.backgroundColor = NSColor.clear.cgColor
+        panel.contentView = content
         popover.behavior = .transient
         popover.delegate = self
         popover.contentViewController = NSHostingController(rootView: DetailView(model: model) { [weak self] in self?.applySettings() })
@@ -43,6 +52,10 @@ final class PeekWindowController: NSObject, NSWindowDelegate, NSPopoverDelegate 
         status.menu = menu
         applySettings()
         restorePosition()
+        catalogObserver = model.$catalog
+            .map { AccountPresentation.orderedIDs(in: $0).count }
+            .removeDuplicates()
+            .sink { [weak self] count in self?.resize(accountCount: count) }
         panel.orderFrontRegardless()
         NotificationCenter.default.addObserver(self, selector: #selector(screenChanged), name: NSApplication.didChangeScreenParametersNotification, object: nil)
     }
@@ -62,6 +75,10 @@ final class PeekWindowController: NSObject, NSWindowDelegate, NSPopoverDelegate 
         UserDefaults.standard.set([panel.frame.origin.x, panel.frame.origin.y], forKey: "peek.windowOrigin")
     }
 
+    func windowDidChangeScreen(_ notification: Notification) {
+        resize(accountCount: model.displayedIDs.count)
+    }
+
     func popoverWillShow(_ notification: Notification) { model.detailsVisible = true }
     func popoverDidClose(_ notification: Notification) { model.detailsVisible = false }
 
@@ -70,7 +87,20 @@ final class PeekWindowController: NSObject, NSWindowDelegate, NSPopoverDelegate 
     }
     @objc private func refresh() { model.refresh() }
     @objc private func quit() { NSApplication.shared.terminate(nil) }
-    @objc private func screenChanged() { constrainToScreen() }
+    @objc private func screenChanged() { resize(accountCount: model.displayedIDs.count) }
+
+    private func resize(accountCount: Int) {
+        let screen = panel.screen ?? NSScreen.main
+        model.availableHeight = max(64, Double(screen?.visibleFrame.height ?? 640) - 16)
+        let height = CGFloat(CapsuleLayout.height(accountCount: accountCount, availableHeight: model.availableHeight))
+        if panel.frame.height != height {
+            var frame = panel.frame
+            frame.origin.y = frame.maxY - height
+            frame.size.height = height
+            panel.setFrame(frame, display: true)
+        }
+        constrainToScreen()
+    }
 
     private func addItem(_ title: String, action: Selector, to menu: NSMenu, key: String = "") {
         let item = NSMenuItem(title: title, action: action, keyEquivalent: key)

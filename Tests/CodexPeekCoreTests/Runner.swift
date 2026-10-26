@@ -6,6 +6,8 @@ struct Runner {
         let accounts = AccountFileStoreTests()
         let usage = UsageClientTests()
         let refresh = RefreshPolicyTests()
+        let settings = SettingsTests()
+        let presentation = PresentationTests()
         let checks: [(String, CheckSuite, () async throws -> Void)] = [
             ("账号去重及只读", accounts, accounts.testDeduplicatesAndUsesNewestCredentialWithoutWritingSources),
             ("同工作区不同登录者", accounts, accounts.testDifferentSubjectsInSameWorkspaceAreSeparateAccounts),
@@ -22,8 +24,11 @@ struct Runner {
             ("单请求及旧响应隔离", refresh, refresh.testSingleFlightAndRejectsStaleOrDuplicateResponses),
             ("退避与限流保护", refresh, refresh.testBackoffAndServerLimitCannotBeBypassedWithForce),
             ("取消与凭据更换", refresh, refresh.testCancellationAndCredentialReplacementInvalidateTickets),
-            ("选择去重与失效账号", refresh, refresh.testSelectionDeduplicatesAndRetainsUnavailablePins),
-            ("初始优选有效账号", refresh, refresh.testInitialSelectionPrefersValidAccountAndRespectsExplicitEmptySlot)
+            ("全部账号与当前优先", presentation, presentation.testAllAccountsShownWithCurrentFirstDespiteLegacySettings),
+            ("切换删除与去重", presentation, presentation.testSwitchAndRemovalReorderWithoutGhostOrDuplicateAccounts),
+            ("空列表与当前未知", presentation, presentation.testEmptySingleAndUnidentifiedCurrent),
+            ("动态高度与屏幕上限", presentation, presentation.testHeightTracksRowsAndIsCappedByScreen),
+            ("旧设置迁移保留别名", settings, settings.testLegacyPreferencesKeepAliasesAndReceiveTransparentDefault)
         ]
         for (name, suite, check) in checks {
             let before = CheckReport.failures.count

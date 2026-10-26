@@ -13,7 +13,7 @@ struct DetailView: View {
                 HStack {
                     VStack(alignment: .leading, spacing: 3) {
                         Text("CodexPeek").font(.system(size: 18, weight: .semibold))
-                        Text(model.demo ? "演示数据 · 不访问账号文件" : "两个账号，一眼查看剩余额度")
+                        Text(model.demo ? "演示数据 · 不访问账号文件" : "所有账号，一眼查看剩余额度")
                             .font(.caption).foregroundStyle(.secondary)
                     }
                     Spacer()
@@ -23,16 +23,14 @@ struct DetailView: View {
                 if let notice = model.sourceNotice {
                     Text(notice).font(.caption).foregroundStyle(.orange).textSelection(.enabled)
                 }
-                ForEach(model.selectedIDs, id: \.self) { id in accountDetail(id) }
+                ForEach(model.displayedIDs, id: \.self) { id in accountDetail(id) }
                 Divider()
-                Toggle("第一个位置跟随当前账号", isOn: $model.settings.followCurrent)
-                    .onChange(of: model.settings.followCurrent) { _ in model.saveSettings() }
-                if model.settings.followCurrent, model.catalog.currentID == nil {
+                Text("已发现 \(model.displayedIDs.count) 个账号，当前使用的账号始终排在最前。")
+                    .font(.caption).foregroundStyle(.secondary)
+                if model.catalog.currentID == nil {
                     Text("尚未识别到当前订阅账号，请检查 Codex 认证路径。")
                         .font(.caption).foregroundStyle(.orange)
                 }
-                accountPicker(index: 0, title: model.settings.followCurrent ? "固定账号" : "账号一")
-                if !model.settings.followCurrent { accountPicker(index: 1, title: "账号二") }
                 Picker("刷新间隔", selection: $model.settings.interval) {
                     Text("5 秒").tag(5.0)
                     Text("10 秒").tag(10.0)
@@ -40,6 +38,23 @@ struct DetailView: View {
                 }.onChange(of: model.settings.interval) { _ in model.saveSettings() }
                 Toggle("窗口置顶", isOn: $model.settings.alwaysOnTop)
                     .onChange(of: model.settings.alwaysOnTop) { _ in model.saveSettings(); windowSettingsChanged() }
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack {
+                        Text("背景透明度")
+                        Spacer()
+                        Text("\(Int(((1 - model.settings.effectiveBackgroundOpacity) * 100).rounded()))%")
+                            .monospacedDigit().foregroundStyle(.secondary)
+                    }
+                    Slider(value: Binding(get: {
+                        1 - model.settings.effectiveBackgroundOpacity
+                    }, set: { model.settings.backgroundOpacity = 1 - $0 }), in: 0.2...1, step: 0.05,
+                           onEditingChanged: { editing in
+                        if !editing && !model.demo { model.settings.save() }
+                    })
+                    .accessibilityLabel("背景透明度")
+                    Text("100% 为完全透明，文字保持清晰可见。")
+                        .font(.caption2).foregroundStyle(.secondary)
+                }
                 DisclosureGroup("账号来源路径") {
                     VStack(alignment: .leading, spacing: 8) {
                         TextField("多账号授权 JSON", text: $stashPath)
@@ -61,25 +76,6 @@ struct DetailView: View {
         .onAppear { stashPath = model.settings.stashPath; authPath = model.settings.authPath }
     }
 
-    private func accountPicker(index: Int, title: String) -> some View {
-        Picker(title, selection: Binding(get: {
-            model.settings.pinnedIDs.indices.contains(index) ? model.settings.pinnedIDs[index] : ""
-        }, set: { value in
-            while model.settings.pinnedIDs.count <= index { model.settings.pinnedIDs.append("") }
-            model.settings.pinnedIDs[index] = value
-            model.saveSettings()
-        })) {
-            Text("不展示").tag("")
-            ForEach(model.catalog.credentials.map(\.account)) { account in
-                Text(model.settings.label(for: account)).tag(account.id)
-            }
-            if model.settings.pinnedIDs.indices.contains(index) {
-                let id = model.settings.pinnedIDs[index]
-                if !id.isEmpty, model.account(id) == nil { Text("已失效账号").tag(id) }
-            }
-        }
-    }
-
     private func accountDetail(_ id: String) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
@@ -92,7 +88,7 @@ struct DetailView: View {
                     Text(plan.uppercased()).font(.caption2).foregroundStyle(.secondary)
                 }
             }
-            if model.account(id) == nil { Text("账号已移除，请重新选择").font(.caption).foregroundStyle(.orange) }
+            if model.account(id) == nil { Text("账号已移除，等待更新列表").font(.caption).foregroundStyle(.orange) }
             if let error = model.errors[id] {
                 Text(error.localizedDescription).font(.caption).foregroundStyle(.orange)
             }

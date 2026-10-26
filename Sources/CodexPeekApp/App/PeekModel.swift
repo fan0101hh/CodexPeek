@@ -11,6 +11,7 @@ final class PeekModel: ObservableObject {
     @Published private(set) var sourceNotice: String?
     @Published private(set) var refreshing: Set<String> = []
     @Published var detailsVisible = false
+    @Published var availableHeight: Double = max(64, Double(NSScreen.main?.visibleFrame.height ?? 640) - 16)
 
     let demo: Bool
     private let client: any UsageProviding
@@ -22,7 +23,10 @@ final class PeekModel: ObservableObject {
     private var sleeping = false
     private var observers: [NSObjectProtocol] = []
 
-    var selectedIDs: [String] { settings.selectedIDs(in: catalog) }
+    var displayedIDs: [String] { settings.displayedIDs(in: catalog) }
+    var capsuleHeight: CGFloat {
+        CGFloat(CapsuleLayout.height(accountCount: displayedIDs.count, availableHeight: availableHeight))
+    }
     var store: AccountFileStore {
         AccountFileStore(stashURL: URL(fileURLWithPath: (settings.stashPath as NSString).expandingTildeInPath),
                          authURL: URL(fileURLWithPath: (settings.authPath as NSString).expandingTildeInPath))
@@ -126,9 +130,6 @@ final class PeekModel: ObservableObject {
         }
         catalog = next
         sourceNotice = next.notices.isEmpty ? nil : Array(Set(next.notices)).sorted().joined(separator: "\n")
-        if settings.chooseInitialAccounts(in: next) {
-            if !demo { settings.save() }
-        }
     }
 
     private func tick(force: Bool = false) {
@@ -143,17 +144,26 @@ final class PeekModel: ObservableObject {
             sourceRetry = false
             reload()
         }
-        let visible = Set(selectedIDs)
+        let visible = Set(displayedIDs)
         for id in Array(requests.keys) where !visible.contains(id) {
             requests.removeValue(forKey: id)?.cancel()
             policies[id]?.cancel()
             refreshing.remove(id)
         }
-        for credential in catalog.credentials where visible.contains(credential.account.id) {
+        let positions = Dictionary(uniqueKeysWithValues: displayedIDs.enumerated().map { ($0.element, $0.offset) })
+        let candidates = catalog.credentials.filter { visible.contains($0.account.id) }.sorted {
+            let left = policies[$0.account.id]?.nextDue ?? .distantPast
+            let right = policies[$1.account.id]?.nextDue ?? .distantPast
+            if left != right { return left < right }
+            return (positions[$0.account.id] ?? 0) < (positions[$1.account.id] ?? 0)
+        }
+        for credential in candidates {
             let id = credential.account.id
             if policies[id]?.revision != credential.revision {
                 policies[id] = RefreshPolicy(revision: credential.revision)
             }
+            // Expired records need no network slot; valid requests are bounded and ordered fairly.
+            if !credential.isExpired(), requests.count >= 3 { continue }
             guard let ticket = policies[id]?.begin(at: Date(), force: force) else { continue }
             if credential.isExpired() {
                 _ = policies[id]?.finish(ticket: ticket, revision: credential.revision, error: .expired,
@@ -169,7 +179,7 @@ final class PeekModel: ObservableObject {
                 catch is CancellationError { return }
                 catch let error as QuotaError { failure = error }
                 catch { failure = .network }
-                guard let self, !Task.isCancelled, self.selectedIDs.contains(id),
+                guard let self, !Task.isCancelled, self.displayedIDs.contains(id),
                       self.policies[id]?.finish(ticket: ticket, revision: credential.revision, error: failure,
                                                 at: Date(), interval: self.settings.refreshInterval) == true else { return }
                 self.requests.removeValue(forKey: id)
