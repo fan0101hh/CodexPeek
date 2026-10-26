@@ -72,11 +72,13 @@ final class PeekWindowController: NSObject, NSWindowDelegate, NSPopoverDelegate 
     }
 
     @objc func showDetails() {
-        if !panel.isVisible { panel.orderFrontRegardless() }
-        guard let view = panel.contentView else { return }
         if popover.isShown { popover.close(); return }
-        popover.show(relativeTo: view.bounds, of: view, preferredEdge: .minY)
-        popover.contentViewController?.view.window?.makeKey()
+        // Let the status menu finish tracking before presenting its popover.
+        DispatchQueue.main.async { [weak self] in
+            guard let self, let button = self.status.button else { return }
+            self.popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+            self.popover.contentViewController?.view.window?.makeKey()
+        }
     }
 
     func windowDidMove(_ notification: Notification) {
