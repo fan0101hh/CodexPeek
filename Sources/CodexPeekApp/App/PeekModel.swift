@@ -13,6 +13,7 @@ final class PeekModel: ObservableObject {
     @Published var detailsVisible = false
     @Published private(set) var displayedIDs: [String] = []
     @Published var availableHeight: Double = max(64, Double(NSScreen.main?.visibleFrame.height ?? 640) - 16)
+    @Published var availableWidth: Double = max(300, Double(NSScreen.main?.visibleFrame.width ?? 1000) - 16)
 
     let demo: Bool
     private let client: any UsageProviding
@@ -25,8 +26,10 @@ final class PeekModel: ObservableObject {
     private var observers: [NSObjectProtocol] = []
 
     var capsuleHeight: CGFloat {
-        CGFloat(CapsuleLayout.height(accountCount: displayedIDs.count, availableHeight: availableHeight))
+        CGFloat(CapsuleLayout.height(accountCount: displayedIDs.count, availableHeight: availableHeight,
+                                    preferredHeight: settings.windowHeight))
     }
+    var capsuleWidth: CGFloat { CGFloat(CapsuleLayout.resolvedWidth(settings.windowWidth, availableWidth: availableWidth)) }
     var store: AccountFileStore {
         AccountFileStore(stashURL: URL(fileURLWithPath: (settings.stashPath as NSString).expandingTildeInPath),
                          authURL: URL(fileURLWithPath: (settings.authPath as NSString).expandingTildeInPath))

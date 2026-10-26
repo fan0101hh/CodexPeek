@@ -19,11 +19,13 @@ final class PeekWindowController: NSObject, NSWindowDelegate, NSPopoverDelegate 
     private let popover = NSPopover()
     private var status: NSStatusItem!
     private var catalogObserver: AnyCancellable?
+    private var applyingFrame = false
+    private var restoringLayout = true
 
     init(model: PeekModel) {
         self.model = model
-        panel = FloatingPanel(contentRect: NSRect(x: 0, y: 0, width: CGFloat(CapsuleLayout.width), height: model.capsuleHeight),
-                        styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
+        panel = FloatingPanel(contentRect: NSRect(x: 0, y: 0, width: model.capsuleWidth, height: model.capsuleHeight),
+                        styleMask: [.borderless, .nonactivatingPanel, .resizable], backing: .buffered, defer: false)
         super.init()
         panel.title = "CodexPeek"
         panel.isOpaque = false
@@ -33,7 +35,11 @@ final class PeekWindowController: NSObject, NSWindowDelegate, NSPopoverDelegate 
         panel.isMovableByWindowBackground = true
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         panel.delegate = self
-        let content = TransparentHostingView(rootView: CapsuleView(model: model) { [weak self] in self?.showDetails() })
+        panel.minSize = NSSize(width: CapsuleLayout.minimumWidth, height: CapsuleLayout.minimumHeight)
+        let content = TransparentHostingView(rootView: CapsuleView(model: model,
+            showDetails: { [weak self] in self?.showDetails() },
+            resizeWindow: { [weak self] size, finished in self?.resizeFromHandle(size, finished: finished) }))
+        content.sizingOptions = []
         content.wantsLayer = true
         content.layer?.backgroundColor = NSColor.clear.cgColor
         panel.contentView = content
@@ -56,11 +62,15 @@ final class PeekWindowController: NSObject, NSWindowDelegate, NSPopoverDelegate 
             .map(\.count)
             .removeDuplicates()
             .sink { [weak self] count in self?.resize(accountCount: count) }
+        restoringLayout = false
         panel.orderFrontRegardless()
         NotificationCenter.default.addObserver(self, selector: #selector(screenChanged), name: NSApplication.didChangeScreenParametersNotification, object: nil)
     }
 
-    func applySettings() { panel.level = model.settings.alwaysOnTop ? .floating : .normal }
+    func applySettings() {
+        panel.level = model.settings.alwaysOnTop ? .floating : .normal
+        resize(accountCount: model.displayedIDs.count)
+    }
 
     @objc func showDetails() {
         if !panel.isVisible { panel.orderFrontRegardless() }
@@ -71,12 +81,29 @@ final class PeekWindowController: NSObject, NSWindowDelegate, NSPopoverDelegate 
     }
 
     func windowDidMove(_ notification: Notification) {
-        guard !model.demo else { return }
+        guard !model.demo, !restoringLayout else { return }
         UserDefaults.standard.set([panel.frame.origin.x, panel.frame.origin.y], forKey: "peek.windowOrigin")
     }
 
     func windowDidChangeScreen(_ notification: Notification) {
         resize(accountCount: model.displayedIDs.count)
+    }
+
+    func windowWillResize(_ sender: NSWindow, to frameSize: NSSize) -> NSSize {
+        NSSize(width: CapsuleLayout.resolvedWidth(frameSize.width, availableWidth: model.availableWidth),
+               height: CapsuleLayout.height(accountCount: model.displayedIDs.count,
+                                            availableHeight: model.availableHeight, preferredHeight: frameSize.height))
+    }
+
+    func windowDidResize(_ notification: Notification) {
+        guard !applyingFrame, !restoringLayout else { return }
+        model.settings.windowWidth = panel.frame.width
+        model.settings.windowHeight = panel.frame.height
+        if !panel.inLiveResize && !model.demo { model.settings.save() }
+    }
+
+    func windowDidEndLiveResize(_ notification: Notification) {
+        if !model.demo { model.settings.save() }
     }
 
     func popoverWillShow(_ notification: Notification) { model.detailsVisible = true }
@@ -91,15 +118,31 @@ final class PeekWindowController: NSObject, NSWindowDelegate, NSPopoverDelegate 
 
     private func resize(accountCount: Int) {
         let screen = panel.screen ?? NSScreen.main
-        model.availableHeight = max(64, Double(screen?.visibleFrame.height ?? 640) - 16)
-        let height = CGFloat(CapsuleLayout.height(accountCount: accountCount, availableHeight: model.availableHeight))
-        if panel.frame.height != height {
+        let availableHeight = max(CapsuleLayout.minimumHeight, Double(screen?.visibleFrame.height ?? 640) - 16)
+        let availableWidth = max(CapsuleLayout.minimumWidth, Double(screen?.visibleFrame.width ?? 1000) - 16)
+        if model.availableHeight != availableHeight { model.availableHeight = availableHeight }
+        if model.availableWidth != availableWidth { model.availableWidth = availableWidth }
+        panel.maxSize = NSSize(width: min(CapsuleLayout.maximumWidth, availableWidth), height: availableHeight)
+        let height = CGFloat(CapsuleLayout.height(accountCount: accountCount, availableHeight: availableHeight,
+                                                 preferredHeight: model.settings.windowHeight))
+        let width = model.capsuleWidth
+        if panel.frame.height != height || panel.frame.width != width {
             var frame = panel.frame
             frame.origin.y = frame.maxY - height
-            frame.size.height = height
+            frame.size = NSSize(width: width, height: height)
+            applyingFrame = true
             panel.setFrame(frame, display: true)
+            applyingFrame = false
         }
         constrainToScreen()
+    }
+
+    private func resizeFromHandle(_ size: CGSize, finished: Bool) {
+        model.settings.windowWidth = CapsuleLayout.resolvedWidth(size.width, availableWidth: model.availableWidth)
+        model.settings.windowHeight = CapsuleLayout.height(accountCount: model.displayedIDs.count,
+            availableHeight: model.availableHeight, preferredHeight: size.height)
+        resize(accountCount: model.displayedIDs.count)
+        if finished && !model.demo { model.settings.save() }
     }
 
     private func addItem(_ title: String, action: Selector, to menu: NSMenu, key: String = "") {

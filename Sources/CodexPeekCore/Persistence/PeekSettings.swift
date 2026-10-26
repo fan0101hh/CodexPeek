@@ -8,13 +8,15 @@ public struct PeekSettings: Codable, Equatable, Sendable {
     public var interval: TimeInterval = 5
     public var alwaysOnTop = true
     public var backgroundOpacity: Double = 0.15
+    public var windowWidth: Double = CapsuleLayout.width
+    public var windowHeight: Double?
     public var stashPath = "~/.cc-switch/codex-login-stash.json"
     public var authPath = "~/.codex/auth.json"
 
     public init() {}
 
     private enum CodingKeys: String, CodingKey {
-        case followCurrent, pinnedIDs, aliases, interval, alwaysOnTop, backgroundOpacity, stashPath, authPath
+        case followCurrent, pinnedIDs, aliases, interval, alwaysOnTop, backgroundOpacity, windowWidth, windowHeight, stashPath, authPath
     }
 
     public init(from decoder: Decoder) throws {
@@ -26,6 +28,8 @@ public struct PeekSettings: Codable, Equatable, Sendable {
         interval = try values.decodeIfPresent(Double.self, forKey: .interval) ?? interval
         alwaysOnTop = try values.decodeIfPresent(Bool.self, forKey: .alwaysOnTop) ?? alwaysOnTop
         backgroundOpacity = try values.decodeIfPresent(Double.self, forKey: .backgroundOpacity) ?? backgroundOpacity
+        windowWidth = try values.decodeIfPresent(Double.self, forKey: .windowWidth) ?? windowWidth
+        windowHeight = try values.decodeIfPresent(Double.self, forKey: .windowHeight)
         stashPath = try values.decodeIfPresent(String.self, forKey: .stashPath) ?? stashPath
         authPath = try values.decodeIfPresent(String.self, forKey: .authPath) ?? authPath
     }

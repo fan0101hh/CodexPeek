@@ -42,6 +42,16 @@ struct DetailView: View {
                 }.onChange(of: model.settings.interval) { _ in model.saveSettings() }
                 Toggle("窗口置顶", isOn: $model.settings.alwaysOnTop)
                     .onChange(of: model.settings.alwaysOnTop) { _ in model.saveSettings(); windowSettingsChanged() }
+                HStack {
+                    Text("拖动右下角可拉宽、拉高").font(.caption).foregroundStyle(.secondary)
+                    Spacer()
+                    Button("恢复自动尺寸") {
+                        model.settings.windowWidth = CapsuleLayout.width
+                        model.settings.windowHeight = nil
+                        if !model.demo { model.settings.save() }
+                        windowSettingsChanged()
+                    }.font(.caption)
+                }
                 VStack(alignment: .leading, spacing: 6) {
                     HStack {
                         Text("背景透明度")

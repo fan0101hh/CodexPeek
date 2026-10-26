@@ -12,14 +12,23 @@ public enum AccountPresentation {
 }
 
 public enum CapsuleLayout {
-    public static let width: Double = 212
+    public static let width: Double = 300
+    public static let minimumWidth: Double = 260
+    public static let maximumWidth: Double = 720
+    public static let minimumHeight: Double = 100
 
     public static func naturalHeight(accountCount: Int) -> Double {
-        guard accountCount > 0 else { return 64 }
-        return max(44, 23 + Double(accountCount) * 18 + Double(accountCount - 1) * 5)
+        guard accountCount > 0 else { return minimumHeight }
+        return 28 + Double(accountCount) * 72 + Double(accountCount - 1) * 8
     }
 
-    public static func height(accountCount: Int, availableHeight: Double) -> Double {
-        min(naturalHeight(accountCount: accountCount), max(44, availableHeight))
+    public static func height(accountCount: Int, availableHeight: Double, preferredHeight: Double? = nil) -> Double {
+        let desired = preferredHeight.flatMap { $0.isFinite ? $0 : nil } ?? naturalHeight(accountCount: accountCount)
+        return min(max(minimumHeight, desired), max(minimumHeight, availableHeight))
+    }
+
+    public static func resolvedWidth(_ preferred: Double, availableWidth: Double) -> Double {
+        let desired = preferred.isFinite ? preferred : width
+        return min(max(minimumWidth, desired), max(minimumWidth, min(maximumWidth, availableWidth)))
     }
 }

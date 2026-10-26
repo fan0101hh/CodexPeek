@@ -15,9 +15,25 @@ final class SettingsTests: CheckSuite {
         expectEqual(settings.interval, 10)
         expectFalse(settings.alwaysOnTop)
         expectEqual(settings.stashPath, "~/custom-stash.json")
+        expectEqual(settings.windowWidth, 300)
+        expectNil(settings.windowHeight)
         settings.save(to: defaults)
         let saved = try requireValue(defaults.data(forKey: "peek.settings"))
         let object = try JSONSerialization.jsonObject(with: saved) as? [String: Any]
         expectEqual(object?["backgroundOpacity"] as? Double, 0.15)
+    }
+
+    func testManualWindowSizePersistsWithoutLosingAliases() throws {
+        var settings = PeekSettings()
+        settings.windowWidth = 440
+        settings.windowHeight = 260
+        settings.aliases = ["work": "工作"]
+        let restored = try JSONDecoder().decode(PeekSettings.self, from: JSONEncoder().encode(settings))
+        expectEqual(restored.windowWidth, 440)
+        expectEqual(restored.windowHeight, 260)
+        expectEqual(restored.aliases["work"], "工作")
+        settings.windowHeight = nil
+        let automatic = try JSONDecoder().decode(PeekSettings.self, from: JSONEncoder().encode(settings))
+        expectNil(automatic.windowHeight)
     }
 }

@@ -31,12 +31,24 @@ final class PresentationTests: CheckSuite {
     }
 
     func testHeightTracksRowsAndIsCappedByScreen() {
-        expectEqual(CapsuleLayout.naturalHeight(accountCount: 0), 64)
-        expectEqual(CapsuleLayout.naturalHeight(accountCount: 1), 44)
-        expectEqual(CapsuleLayout.naturalHeight(accountCount: 2), 64)
-        expectEqual(CapsuleLayout.naturalHeight(accountCount: 3), 87)
+        expectEqual(CapsuleLayout.naturalHeight(accountCount: 0), 100)
+        expectEqual(CapsuleLayout.naturalHeight(accountCount: 1), 100)
+        expectEqual(CapsuleLayout.naturalHeight(accountCount: 2), 180)
+        expectEqual(CapsuleLayout.naturalHeight(accountCount: 3), 260)
         expectEqual(CapsuleLayout.height(accountCount: 100, availableHeight: 700), 700)
-        expectEqual(CapsuleLayout.height(accountCount: 1, availableHeight: 700), 44)
+        expectEqual(CapsuleLayout.height(accountCount: 1, availableHeight: 700), 100)
+    }
+
+    func testManualSizeClampsAndRetainsScrollViewport() {
+        expectEqual(CapsuleLayout.resolvedWidth(420, availableWidth: 1000), 420)
+        expectEqual(CapsuleLayout.resolvedWidth(20, availableWidth: 1000), 260)
+        expectEqual(CapsuleLayout.resolvedWidth(9999, availableWidth: 1000), 720)
+        expectEqual(CapsuleLayout.resolvedWidth(700, availableWidth: 500), 500)
+        expectEqual(CapsuleLayout.resolvedWidth(.nan, availableWidth: 1000), 300)
+        expectEqual(CapsuleLayout.height(accountCount: 10, availableHeight: 700, preferredHeight: 220), 220)
+        expectEqual(CapsuleLayout.height(accountCount: 1, availableHeight: 700, preferredHeight: 400), 400)
+        expectEqual(CapsuleLayout.height(accountCount: 3, availableHeight: 700, preferredHeight: 20), 100)
+        expectEqual(CapsuleLayout.height(accountCount: 3, availableHeight: 700, preferredHeight: .nan), 260)
     }
 
     func testLoggedOutAndExpiredRecordsAreNotDisplayed() {
