@@ -47,7 +47,7 @@ final class PeekWindowController: NSObject, NSWindowDelegate, NSPopoverDelegate 
         popover.delegate = self
         popover.contentViewController = NSHostingController(rootView: DetailView(model: model) { [weak self] in self?.applySettings() })
         status = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
-        status.button?.image = NSImage(systemSymbolName: "gauge.with.dots.needle.50percent", accessibilityDescription: "CodexPeek")
+        status.button?.image = MenuBarIcon.make()
         status.button?.toolTip = "CodexPeek · 订阅剩余额度"
         let menu = NSMenu()
         addItem("显示／隐藏悬浮窗", action: #selector(toggleWindow), to: menu)

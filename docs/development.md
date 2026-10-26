@@ -42,3 +42,7 @@ codesign --verify --strict dist/CodexPeek.app
 ## 发布
 
 当前脚本仅生成本地 ad-hoc 签名 .app。GitHub Actions 打包只供构建检查；对外分发前应另行配置签名、公证及实际运行验证，不把 Apple 凭据写入仓库。项目未添加许可证，不应在包元数据中默认声明 MIT。
+
+## 应用图标
+
+构建脚本调用 `scripts/generate-icon.swift` 生成 16…1024 像素图标集，再用系统 iconutil 创建 AppIcon.icns。Info.plist 的 CFBundleIconFile 指向该文件，签名前复制到 Contents/Resources。菜单栏使用代码绘制的 template 图标，自动适配系统深浅背景，不依赖特定版本的 SF Symbol。应用保持 LSUIElement 模式，不显示 Dock 图标。

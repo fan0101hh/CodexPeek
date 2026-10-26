@@ -12,6 +12,7 @@
 - 悬停查看重置时间，点击打开详情、重置倒计时及设置。
 - 默认每 5 秒查询，支持 10、30 秒；失败退避，休眠暂停、唤醒刷新。
 - 按住顶部短线移动窗口，拖动右下角改变宽度和高度；自动保存位置与尺寸，支持置顶和菜单栏隐藏。
+- 专用应用图标与双进度条菜单栏图标；默认以菜单栏模式运行，不占用 Dock。
 - 不依赖 Codex CLI、Electron、WebView 或常驻查询子进程，无第三方库。
 
 ## 构建与运行
@@ -71,3 +72,5 @@ swift run CodexPeek --diagnose
 更多说明：[架构](docs/architecture.md) · [开发与验证](docs/development.md) · [凭据处理](docs/security.md) · [贡献说明](CONTRIBUTING.md) · [English](README.en.md)
 
 窗口默认自动适配账号数量，手动拉伸后保留自选尺寸。可在详情中点击“恢复自动尺寸”，恢复默认宽度及按账号数增高。
+
+应用图标由 `scripts/generate-icon.swift` 使用 AppKit 矢量绘图生成，构建时自动生成多分辨率 ICNS 并打包，无外部图片依赖。

@@ -18,6 +18,10 @@ for architecture in "${architectures[@]}"; do
 done
 app_dir="$project_root/dist/CodexPeek.app"
 mkdir -p "$app_dir/Contents/MacOS" "$app_dir/Contents/Resources"
+swift scripts/generate-icon.swift .build/app-icon
+iconutil -c icns .build/app-icon/AppIcon.iconset -o .build/app-icon/AppIcon.icns
+cp .build/app-icon/AppIcon.icns "$app_dir/Contents/Resources/AppIcon.icns"
+cp .build/app-icon/AppIcon.png "$project_root/dist/CodexPeek-icon.png"
 if [[ "${#binaries[@]}" -eq 2 ]]; then
     lipo -create "${binaries[@]}" -output "$app_dir/Contents/MacOS/CodexPeek"
 else
