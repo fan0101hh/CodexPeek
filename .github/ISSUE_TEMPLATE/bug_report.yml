@@ -1,0 +1,30 @@
+name: 缺陷报告
+description: 报告额度读取或悬浮窗问题
+body:
+  - type: markdown
+    attributes:
+      value: 请勿提供 auth.json、stash 文件、令牌、原始服务响应或带有个人账号信息的截图。
+  - type: input
+    id: version
+    attributes:
+      label: CodexPeek 版本或提交
+    validations:
+      required: true
+  - type: input
+    id: system
+    attributes:
+      label: macOS 版本与芯片架构
+      placeholder: macOS 15 / Apple Silicon
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: 复现步骤、预期结果与实际结果
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: 脱敏诊断结果（可选）
+      description: 仅粘贴 --diagnose 的摘要，勿附带认证文件。

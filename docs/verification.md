@@ -1,0 +1,20 @@
+# 第一版本机验证记录
+
+日期：2026-10-26。
+
+| 检查 | 结果 |
+| --- | --- |
+| `swift run CodexPeekChecks` | 17 项检查通过，0 失败；仅人工数据 |
+| `bash scripts/build-app.sh` | arm64 与 x86_64 release 编译通过，生成通用 .app 和 ZIP |
+| `lipo -archs` | 主程序包含 x86_64、arm64 |
+| `plutil -lint` | 应用 Info.plist 通过 |
+| `codesign --verify --strict` | 本地 ad-hoc 签名校验通过；未做公证 |
+| 最终 .app 的 `--diagnose` | 两个选中账号查询成功，均返回 5 小时与周窗口 |
+| 来源记录 | 另有过期访问令牌，拒绝发送；不自动轮换共享令牌 |
+| 仓库扫描 | 未发现真实 JWT、API Key 格式或个人绝对路径；构建产物已忽略 |
+
+使用 Swift 6.2.1 和 macOS 26.1 SDK。测试环境仅提供 Command Line Tools，没有 XCTest，因此核心检查使用 SwiftPM 内的零依赖断言执行器，失败返回非零退出码。测试入口是 `Tests/CodexPeekCoreTests/Runner.swift`。
+
+未授予电脑使用权限，尚未验证拖动、点击、弹层、菜单、跨桌面和全屏行为；没有通过其他工具绕过该权限。真实休眠恢复、两款账号切换工具的交互及显示器切换仍需手工验证。未运行 Apple Silicon 真机 GUI 验收，跨架构编译通过不等于真机交互验证。
+
+未测量 UI 常驻 CPU、内存或功耗。压缩包大小不代表内存占用，不能据此声称资源占用达到某个数值。GitHub Actions 已配置，尚未在远程仓库执行。
