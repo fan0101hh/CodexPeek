@@ -1,5 +1,7 @@
 # CodexPeek
 
+The first public version is **v0.1.0**, build 1. Earlier local iteration records remain in Git history and do not represent published releases.
+
 A compact native macOS floating window for viewing remaining Codex subscription quotas for all accounts with usable sign-in credentials, with the current account first. Built with SwiftUI, AppKit and Foundation; no third-party dependencies or background Codex processes.
 
 Requires macOS 13+ and a Swift 6.0+ toolchain.
