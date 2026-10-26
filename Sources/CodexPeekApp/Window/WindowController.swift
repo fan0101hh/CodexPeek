@@ -37,7 +37,6 @@ final class PeekWindowController: NSObject, NSWindowDelegate, NSPopoverDelegate 
         panel.delegate = self
         panel.minSize = NSSize(width: CapsuleLayout.minimumWidth, height: CapsuleLayout.minimumHeight)
         let content = TransparentHostingView(rootView: CapsuleView(model: model,
-            showDetails: { [weak self] in self?.showDetails() },
             resizeWindow: { [weak self] size, finished in self?.resizeFromHandle(size, finished: finished) }))
         content.sizingOptions = []
         content.wantsLayer = true

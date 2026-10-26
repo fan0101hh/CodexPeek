@@ -3,19 +3,16 @@ import SwiftUI
 
 struct CapsuleView: View {
     @ObservedObject var model: PeekModel
-    let showDetails: () -> Void
     let resizeWindow: (CGSize, Bool) -> Void
     @State private var hovering = false
 
     var body: some View {
         Group {
             if model.displayedIDs.isEmpty {
-                Button(action: showDetails) {
-                    VStack(spacing: 6) {
-                        Image(systemName: "person.crop.circle.badge.plus").font(.system(size: 18))
-                        Text("暂无已登录账号").font(.system(size: 12, weight: .medium))
-                    }.foregroundStyle(.white.opacity(0.75)).frame(maxWidth: .infinity, maxHeight: .infinity)
-                }.buttonStyle(.plain)
+                VStack(spacing: 6) {
+                    Image(systemName: "person.crop.circle").font(.system(size: 18))
+                    Text("暂无已登录账号").font(.system(size: 12, weight: .medium))
+                }.foregroundStyle(.white.opacity(0.75)).frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if CapsuleLayout.naturalHeight(accountCount: model.displayedIDs.count, width: Double(model.capsuleWidth)) > Double(model.capsuleHeight) {
                 ScrollViewReader { proxy in
                     ScrollView(.vertical) { rows }
@@ -49,8 +46,7 @@ struct CapsuleView: View {
     private var rows: some View {
         VStack(spacing: 8) {
             ForEach(model.displayedIDs, id: \.self) { id in
-                Button(action: showDetails) { accountCard(id) }
-                    .buttonStyle(.plain).help(model.tooltip(id))
+                accountCard(id).help(model.tooltip(id))
             }
         }
     }
@@ -101,7 +97,9 @@ struct CapsuleView: View {
                     .frame(width: 69, alignment: .trailing)
                 if wide {
                     Text("（" + reset + "）").font(.system(size: 10))
-                        .foregroundStyle(.white.opacity(0.5)).fixedSize()
+                        .foregroundStyle(.white.opacity(0.5))
+                        .lineLimit(1).minimumScaleFactor(0.75)
+                        .frame(width: 160, alignment: .leading)
                 }
             }.frame(height: 16)
             if !wide {
